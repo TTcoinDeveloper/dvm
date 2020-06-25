@@ -112,6 +112,7 @@ where
         TransactionDataCache::new(&self.ds)
     }
 
+    /// Publish module.
     pub fn publish_module(&self, meta: ExecutionMeta, module: Module) -> VmResult {
         let mut cache = self.make_data_cache();
         let mut cost_strategy =

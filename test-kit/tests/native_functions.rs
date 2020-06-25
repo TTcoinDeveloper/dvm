@@ -4,17 +4,9 @@ use dvm_test_kit::*;
 use libra::move_vm_natives::oracle;
 use runtime::move_vm::{U64Store, AddressStore};
 use libra::lcs;
-use twox_hash::XxHash64;
-use std::hash::Hasher;
 use dvm_net::api::grpc::vm_grpc::{VmArgs, VmTypeTag, ModuleIdent, LcsTag, StructIdent, LcsType};
 use libra::move_core_types::language_storage::CORE_CODE_ADDRESS;
 use serde_derive::Serialize;
-
-fn str_xxhash(ticker: &str) -> u64 {
-    let mut hash = XxHash64::default();
-    Hasher::write(&mut hash, ticker.as_bytes());
-    Hasher::finish(&hash)
-}
 
 #[test]
 fn test_oracle() {
