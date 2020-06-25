@@ -5,6 +5,7 @@ use libra::libra_types::{
 };
 use serde_derive::Deserialize;
 
+/// Returns genesis write set.
 pub fn genesis_write_set() -> WriteSet {
     let genesis = include_str!("../resources/genesis.json");
     let ws = serde_json::from_str::<Vec<Row>>(genesis)
