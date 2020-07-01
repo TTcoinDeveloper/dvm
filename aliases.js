@@ -1,0 +1,16 @@
+var ALIASES = {};
+ALIASES["dvm"] = {};
+ALIASES["dvm_cli"] = {};
+ALIASES["dvm_compiler"] = {};
+ALIASES["dvm_data_source"] = {};
+ALIASES["dvm_info"] = {};
+ALIASES["dvm_lang"] = {};
+ALIASES["dvm_libra_deps"] = {};
+ALIASES["dvm_net"] = {};
+ALIASES["dvm_runtime"] = {};
+ALIASES["dvm_services"] = {};
+ALIASES["dvm_test_kit"] = {};
+ALIASES["movec"] = {};
+ALIASES["status_table"] = {};
+ALIASES["stdlib"] = {};
+ALIASES["stdlib_builder"] = {};

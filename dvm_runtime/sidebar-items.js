@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["gas_schedule","Defines dvm `CostTable`."],["move_vm","Defines structures for script execution inside VM."]]});

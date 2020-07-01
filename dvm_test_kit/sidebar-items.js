@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["PORT_RANGE",""]],"fn":[["account","Create a new account address from hex string."],["genesis_write_set",""],["meta","Returns execution meta with given address."]],"mod":[["compiled_protos",""]],"struct":[["Server",""],["Signal",""],["TestKit","DVM test kit;"]],"type":[["ArcMut",""]]});

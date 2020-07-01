@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["extract_script_params","Get script signature."]],"mod":[["verification","Procedures for verification of bytecode (restricted set of instructions and modules)."]]});

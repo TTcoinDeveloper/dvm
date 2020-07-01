@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["make_rest_loader",""]],"struct":[["Loader",""],["LoaderErrorResponse",""],["LoaderResponse",""],["Response",""],["RestBytecodeSource",""],["ZeroSource",""]],"trait":[["BytecodeSource",""]]});

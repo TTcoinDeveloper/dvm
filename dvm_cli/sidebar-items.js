@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["init","Init standard handlers for cli-executable. Create standard logger, init integrations such as with sentry if enabled. By default - init logging without extra integrations."],["init_sigterm_handler",""],["init_sigterm_handler_fut",""]],"mod":[["config",""],["info_service",""],["logging",""]]});
