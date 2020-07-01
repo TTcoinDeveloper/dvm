@@ -4,6 +4,9 @@ use libra::libra_vm::file_format::{
     StructFieldInformation, Kind, SignatureToken, StructHandleIndex, CompiledModuleMut, Signature,
 };
 use libra::libra_types::account_address::AccountAddress;
+use crate::mv::disassembler::Encode;
+use anyhow::Error;
+use std::fmt::Write;
 
 pub struct Imports<'a> {
     imports: BTreeMap<&'a str, BTreeMap<AccountAddress, Import<'a>>>,
@@ -46,4 +49,30 @@ pub type Import<'a> = Rc<ImportName<'a>>;
 pub enum ImportName<'a> {
     Name(&'a str),
     Alias(&'a str, usize),
+}
+
+impl<'a> Encode for Imports<'a> {
+    fn encode<W: Write>(&self, w: &mut W, indent: u8) -> Result<(), Error> {
+        for (name, address_map) in &self.imports {
+            for (address, alias) in address_map {
+                write!(w, "{s:width$}use 0x{addr}::{name}", s = "", width = indent as usize, addr = address, name = name)?;
+                if let ImportName::Alias(alias, id) = alias.as_ref() {
+                    write!(w, " as {}_{}", alias, id)?;
+                }
+                writeln!(w, ";")?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl<'a> Encode for ImportName<'a> {
+    fn encode<W: Write>(&self, w: &mut W, _: u8) -> Result<(), Error> {
+        match &self {
+            ImportName::Name(name) => w.write_str(name)?,
+            ImportName::Alias(name, id) => write!(w, "{}_{}", name, id)?,
+        }
+
+        Ok(())
+    }
 }

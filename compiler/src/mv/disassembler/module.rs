@@ -16,6 +16,8 @@ pub struct Module<'a> {
     address: Option<AccountAddress>,
     name: &'a str,
     structs: Vec<StructDef<'a>>,
+    functions: Vec<FunctionsDef<'a>>,
+    imports: &'a Imports<'a>,
 }
 
 impl<'a> Module<'a> {
@@ -35,22 +37,29 @@ impl<'a> Module<'a> {
             address: Some(*id.address()),
             name: id.name().as_str(),
             structs,
+            imports
         }
     }
 }
 
 impl<'a> Encode for Module<'a> {
-    fn write<W: Write>(&self, w: &mut W, _indent: u8) -> Result<(), Error> {
+    fn encode<W: Write>(&self, w: &mut W, _indent: u8) -> Result<(), Error> {
         if let Some(address) = self.address {
             writeln!(w, "address 0x{} {{ ", address)?;
         }
 
         writeln!(w, "module {} {{", self.name)?;
 
+        self.imports.encode(w, INDENT)?;
+        writeln!(w)?;
+
         for struct_def in &self.structs {
-            struct_def.write(w, INDENT)?;
-            writeln!(w, "")?;
+            struct_def.encode(w, INDENT)?;
+            writeln!(w)?;
+            writeln!(w)?;
         }
+
+
 
         writeln!(w, "}}")?;
 

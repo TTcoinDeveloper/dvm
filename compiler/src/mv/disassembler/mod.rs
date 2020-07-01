@@ -11,13 +11,13 @@ use libra::move_core_types::language_storage::ModuleId;
 use crate::mv::disassembler::generics::Generics;
 use crate::mv::disassembler::imports::Imports;
 
+mod field;
 mod functions;
 mod generics;
 mod imports;
 mod module;
 mod script;
 mod structs;
-mod field;
 
 pub const INDENT: u8 = 4;
 
@@ -58,8 +58,8 @@ impl<'a> Unit<'a> {
 
     pub fn write_code<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
         match self {
-            Unit::Script(script) => script.write(writer, 0),
-            Unit::Module(module) => module.write(writer, 0),
+            Unit::Script(script) => script.encode(writer, 0),
+            Unit::Module(module) => module.encode(writer, 0),
         }
     }
 
@@ -71,7 +71,7 @@ impl<'a> Unit<'a> {
 }
 
 pub trait Encode {
-    fn write<W: Write>(&self, w: &mut W, indent: u8) -> Result<(), Error>;
+    fn encode<W: Write>(&self, w: &mut W, indent: u8) -> Result<(), Error>;
 }
 
 #[cfg(test)]
@@ -95,6 +95,7 @@ mod tests {
 
         let original_bytecode = compiler.compile(source, Some(CORE_CODE_ADDRESS)).unwrap();
         let restored_source = disasm_str(&original_bytecode).unwrap();
+        println!("{}", restored_source);
 
         let original_bytecode = CompiledModule::deserialize(&original_bytecode).unwrap();
         let restored_bytecode = compiler

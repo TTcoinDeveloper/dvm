@@ -1,4 +1,4 @@
-use crate::mv::disassembler::Encode;
+use crate::mv::disassembler::{Encode, INDENT};
 use anyhow::Error;
 use std::fmt::Write;
 use crate::mv::disassembler::generics::{Generics, Generic};
@@ -35,7 +35,7 @@ impl<'a> StructDef<'a> {
 
         let fields = Self::extract_fields(module, &def.field_information, imports, &type_params);
 
-       StructDef {
+        StructDef {
             is_nominal_resource: handler.is_nominal_resource,
             is_native: def.field_information == StructFieldInformation::Native,
             name,
@@ -88,28 +88,25 @@ impl<'a> StructDef<'a> {
                 imports,
                 type_params,
             ))),
-            SignatureToken::Struct(struct_index) =>
-                FType::Struct(Self::extract_struct_name(module, struct_index, imports)),
-            SignatureToken::StructInstantiation(struct_index, typed) => {
-                FType::StructInst(Self::extract_struct_name(module, struct_index, imports),
-                                  typed
-                                      .iter()
-                                      .map(|t| Self::extract_type_signature(module, t, imports, type_params))
-                                      .collect::<Vec<_>>(),
-                )
+            SignatureToken::Struct(struct_index) => {
+                FType::Struct(Self::extract_struct_name(module, struct_index, imports))
             }
+            SignatureToken::StructInstantiation(struct_index, typed) => FType::StructInst(
+                Self::extract_struct_name(module, struct_index, imports),
+                typed
+                    .iter()
+                    .map(|t| Self::extract_type_signature(module, t, imports, type_params))
+                    .collect::<Vec<_>>(),
+            ),
             SignatureToken::Reference(sign) => FType::Ref(Box::new(Self::extract_type_signature(
                 module,
                 sign.as_ref(),
                 imports,
                 type_params,
             ))),
-            SignatureToken::MutableReference(sign) => FType::RefMut(Box::new(Self::extract_type_signature(
-                module,
-                sign.as_ref(),
-                imports,
-                type_params,
-            ))),
+            SignatureToken::MutableReference(sign) => FType::RefMut(Box::new(
+                Self::extract_type_signature(module, sign.as_ref(), imports, type_params),
+            )),
             SignatureToken::TypeParameter(index) => {
                 FType::Generic(type_params[*index as usize].clone())
             }
@@ -128,14 +125,23 @@ impl<'a> StructDef<'a> {
         let address = &module.address_identifiers[module_handler.address.0 as usize];
         let type_name = module.identifiers[handler.name.0 as usize].as_str();
 
-        imports.get_import(address, module_name)
-            .and_then(|import| Some(FullStructName { name: type_name, import: Some(import) }))
-            .unwrap_or_else(|| FullStructName { name: type_name, import: None })
+        imports
+            .get_import(address, module_name)
+            .and_then(|import| {
+                Some(FullStructName {
+                    name: type_name,
+                    import: Some(import),
+                })
+            })
+            .unwrap_or_else(|| FullStructName {
+                name: type_name,
+                import: None,
+            })
     }
 }
 
 impl<'a> Encode for StructDef<'a> {
-    fn write<W: Write>(&self, w: &mut W, indent: u8) -> Result<(), Error> {
+    fn encode<W: Write>(&self, w: &mut W, indent: u8) -> Result<(), Error> {
         let nominal_name = if self.is_nominal_resource {
             "resource struct"
         } else if self.is_native {
@@ -144,34 +150,71 @@ impl<'a> Encode for StructDef<'a> {
             "struct"
         };
 
-        if self.is_native {
-            writeln!(
-                f,
-                "{s:width$}{nominal_name} {name}{params};",
-                s = "",
-                width = indent,
-                nominal_name = nominal_name,
-                name = self.name,
-                params = self.type_params,
-            )
-        } else {
-            writeln!(
-                f,
-                "{s:width$}{nominal_name} {name}{params} {{\n{fields}{s:width$}}}",
-                s = "",
-                width = self.indent_size,
-                nominal_name = nominal_name,
-                name = self.name,
-                params = self.type_params,
-                fields = self.fields,
-            )
+        fn write_type_parameters<W: Write>(
+            w: &mut W,
+            type_params: &[Generic],
+        ) -> Result<(), Error> {
+            if !type_params.is_empty() {
+                write!(w, "<")?;
+                for (index, type_param) in type_params.iter().enumerate() {
+                    type_param.encode(w, 0)?;
+                    if index != type_params.len() - 1 {
+                        w.write_str(", ")?;
+                    }
+                }
+                write!(w, ">")?;
+            }
+            Ok(())
         }
+
+        if self.is_native {
+            write!(
+                w,
+                "{s:width$}{nominal_name} {name}",
+                s = "",
+                width = indent as usize,
+                nominal_name = nominal_name,
+                name = self.name,
+            )?;
+            write_type_parameters(w, &self.type_params)?;
+            writeln!(w, ";")?;
+        } else {
+            write!(
+                w,
+                "{s:width$}{nominal_name} {name}",
+                s = "",
+                width = indent as usize,
+                nominal_name = nominal_name,
+                name = self.name,
+            )?;
+            write_type_parameters(w, &self.type_params)?;
+            writeln!(w, " {{")?;
+            for (index, field) in self.fields.iter().enumerate() {
+                field.encode(w, indent + INDENT)?;
+
+                if index != self.fields.len() - 1 {
+                    w.write_str(",\n")?;
+                } else {
+                    w.write_str("\n")?;
+                }
+            }
+
+            write!(w, "{s:width$}}}", s = "", width = indent as usize, )?;
+        }
+        Ok(())
     }
 }
 
 pub struct Field<'a> {
     name: &'a str,
     f_type: FType<'a>,
+}
+
+impl<'a> Encode for Field<'a> {
+    fn encode<W: Write>(&self, w: &mut W, indent: u8) -> Result<(), Error> {
+        write!(w, "{s:width$}{name}: ", s = "", width = indent as usize, name = self.name)?;
+        self.f_type.encode(w, 0)
+    }
 }
 
 pub enum FType<'a> {
@@ -184,7 +227,62 @@ pub enum FType<'a> {
     StructInst(FullStructName<'a>, Vec<FType<'a>>),
 }
 
+impl<'a> Encode for FType<'a> {
+    fn encode<W: Write>(&self, w: &mut W, indent: u8) -> Result<(), Error> {
+        match self {
+            FType::Primitive(name) => {
+                w.write_str(name)?;
+            }
+            FType::Generic(type_param) => {
+                type_param.as_name().encode(w, indent)?;
+            }
+            FType::Ref(t) => {
+                w.write_str("&")?;
+                t.encode(w, indent)?;
+            }
+            FType::RefMut(t) => {
+                w.write_str("&mut ")?;
+                t.encode(w, indent)?;
+            }
+            FType::Vec(t) => {
+                w.write_str("vector<")?;
+                t.encode(w, indent)?;
+                w.write_str(">")?;
+            }
+            FType::Struct(name) => {
+                name.encode(w, indent)?;
+            }
+            FType::StructInst(name, generics) => {
+                name.encode(w, indent)?;
+                if !generics.is_empty() {
+                    write!(w, "<")?;
+                    for (index, generic) in generics.iter().enumerate() {
+                        generic.encode(w, 0)?;
+                        if index != generics.len() - 1 {
+                            w.write_str(", ")?;
+                        }
+                    }
+                    write!(w, ">")?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
 pub struct FullStructName<'a> {
     name: &'a str,
     import: Option<Import<'a>>,
+}
+
+impl<'a> Encode for FullStructName<'a> {
+    fn encode<W: Write>(&self, w: &mut W, indent: u8) -> Result<(), Error> {
+        if let Some(import) = &self.import {
+            import.encode(w, indent)?;
+            w.write_str("::")?;
+        }
+        w.write_str(self.name)?;
+        Ok(())
+    }
 }
