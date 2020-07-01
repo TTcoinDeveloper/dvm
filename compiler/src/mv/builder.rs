@@ -6,7 +6,7 @@ use libra::move_lang;
 use std::fs::{File, OpenOptions};
 use crate::mv::bech32::bech32_into_libra;
 use std::io::Write;
-use crate::mv::{preprocessor, disassembler};
+use crate::mv::{preprocessor, disassembler1 as disassembler};
 use anyhow::{Result, Error};
 use move_lang::shared::Address;
 use move_lang::errors::{FilesSourceText, Errors, output_errors};

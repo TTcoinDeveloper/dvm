@@ -675,7 +675,7 @@ mod tests {
     use libra::libra_types::account_address::AccountAddress;
     use ds::MockDataSource;
     use crate::embedded::Compiler;
-    use crate::mv::disassembler::module_signature;
+    use crate::mv::disassembler1::module_signature;
     use libra::move_core_types::language_storage::CORE_CODE_ADDRESS;
 
     #[test]
